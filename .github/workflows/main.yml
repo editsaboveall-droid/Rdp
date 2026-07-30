@@ -1,39 +1,53 @@
-name: RDP
+name: RDP Access
+
 on:
-workflow_dispatch:
+  workflow_dispatch:
+
 jobs:
-secure-rdp:
-runs-on: windows-latest
-timeout-minutes: 3600
-steps:
-- name: Configure Core RDP Settings By Yamzz
-run: |
-Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "REO_RYKU_REOSHI" -Value 0 -Force
-Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
-Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "SecurityLayer" -Value 0 -Force
-netsh advfirewall firewall delete rule name="RDP-Tailscale"
-netsh advfirewall firewall add rule name="RDP-Tailscale" dir=in action=allow protocol=TCP localport=3389
-Restart-Service -Name TermService -Force
-- name: Create RDP User with Secure Password
-run: |
-$username = "YamzzOfficial"
-$password = "YamzzOffical@123"
-$securePass = ConvertTo-SecureString $password -AsPlainText -Force
-New-LocalUser -Name $username -Password $securePass -AccountNeverExpires
-Add-LocalGroupMember -Group "Administrators" -Member $username
-Add-LocalGroupMember -Group "Remote Desktop Users" -Member $username
-echo "RDP_CREDS=User: $username | Password: $password" >> $env:GITHUB_ENV
-if (-not (Get-LocalUser -Name $username)) {
-exit 1
-}
-- name: Install Tailscale
-run: |
-$tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
-$installerPath = "$env:TEMP\tailscale.msi"
-Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
-Start-Process msiexec.exe -ArgumentList "/i", "`"$installerPath`"", "/quiet", "/norestart" -Wait
-Remove-Item $installerPath -Force
-- name: Establish Tailscale Connection
-run: |
-& "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-runner-$env:GITHUB_RUN_ID
-$tsIP = $null
+  rdp:
+    runs-on: windows-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Windows RDP User
+        run: |
+          net user ${{ secrets.REO_RYKU_REOSHI }} ${{ secrets.SecureP@ssw0rd123!). }} /add
+          net localgroup administrators ${{ secrets.RDP_USERNAME }} /add
+          net accounts /maxpwage:UNLIMITED
+        shell: powershell
+
+      - name: Enable Remote Desktop
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        shell: powershell
+
+      - name: Connect to Tailscale Network
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+          version: latest
+
+      - name: Display Connection Information
+        run: |
+          Write-Host "===================================================="
+          Write-Host "RDP is ready!"
+          Write-Host "Username: ${{ secrets.RDP_USERNAME }}"
+          Write-Host "Connect via your Tailscale IP shown in your Tailscale admin panel."
+          Write-Host "===================================================="
+        shell: powershell
+
+      - name: Keep Workflow Alive
+        run: |
+          $i = 0
+          while ($true) {
+            Start-Sleep -Seconds 60
+            $i++
+            Write-Host "Keep-alive tick: $i minutes elapsed"
+          }
+        shell: powershell
+        

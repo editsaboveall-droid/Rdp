@@ -26,11 +26,18 @@ jobs:
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         shell: powershell
 
-      - name: Connect to Tailscale Network
-        uses: tailscale/github-action@v2
-        with:
-          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
-          version: latest
+      - name: Install and Connect Tailscale
+        run: |
+          Write-Host "Downloading Tailscale..."
+          Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-latest.msi" -OutFile "tailscale-setup.msi"
+          
+          Write-Host "Installing Tailscale..."
+          Start-Process msiexec.exe -ArgumentList '/i tailscale-setup.msi /quiet /norestart' -NoNewWindow -Wait
+          
+          Write-Host "Starting Tailscale and logging in..."
+          $tailscalePath = "$env:ProgramFiles\Tailscale\tailscale.exe"
+          & $tailscalePath up --authkey="${{ secrets.TAILSCALE_AUTH_KEY }}" --accept-routes
+        shell: powershell
 
       - name: Display Connection Information
         run: |

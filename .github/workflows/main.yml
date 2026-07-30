@@ -14,8 +14,8 @@ jobs:
 
       - name: Set up Windows RDP User
         run: |
-          net user ${{ secrets.REO_RYKU_REOSHI }} ${{ secrets.SecureP@ssw0rd123!). }} /add
-          net localgroup administrators ${{ secrets.RDP_USERNAME }} /add
+          net user ${{ secrets.RDP_USER }} ${{ secrets.RDP_PASS }} /add
+          net localgroup administrators ${{ secrets.RDP_USER }} /add
           net accounts /maxpwage:UNLIMITED
         shell: powershell
 
@@ -36,7 +36,7 @@ jobs:
         run: |
           Write-Host "===================================================="
           Write-Host "RDP is ready!"
-          Write-Host "Username: ${{ secrets.RDP_USERNAME }}"
+          Write-Host "Username: ${{ secrets.RDP_USER }}"
           Write-Host "Connect via your Tailscale IP shown in your Tailscale admin panel."
           Write-Host "===================================================="
         shell: powershell

@@ -26,13 +26,13 @@ jobs:
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         shell: powershell
 
-      - name: Install and Connect Tailscale
+      - name: Install and Connect Tailscale via Winget
         run: |
-          Write-Host "Downloading Tailscale MSI..."
-          Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-1.78.3-amd64.msi" -OutFile "tailscale-setup.msi"
+          Write-Host "Installing Tailscale using winget..."
+          winget install --id Tailscale.Tailscale -e --accept-package-agreements --accept-source-agreements
           
-          Write-Host "Installing Tailscale silently..."
-          Start-Process -FilePath "msiexec.exe" -ArgumentList "/i tailscale-setup.msi /quiet /norestart" -NoNewWindow -Wait
+          Write-Host "Refreshing Environment Paths..."
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           
           Write-Host "Starting Tailscale and logging in..."
           $tailscalePath = "$env:ProgramFiles\Tailscale\tailscale.exe"

@@ -26,25 +26,21 @@ jobs:
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         shell: powershell
 
-      - name: Install Ngrok
+      - name: Install and Connect Tailscale
         run: |
-          winget install --id Ngrok.Ngrok -e --accept-package-agreements --accept-source-agreements
+          curl.exe -fsSL https://pkgs.tailscale.com/stable/tailscale-setup-unsigned.exe -o tailscale-setup.exe
+          Start-Process -FilePath "tailscale-setup.exe" -ArgumentList "/quiet" -Wait
+          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TS_AUTHKEY }} --hostname=github-rdp-pc
         shell: powershell
 
-      - name: Start Ngrok Tunnel for RDP
+      - name: Display Connection Information
         run: |
-          ngrok config add-authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
-          Start-Process ngrok -ArgumentList "tcp 3389"
-          Start-Sleep -Seconds 5
-        shell: powershell
-
-      - name: Get Ngrok Connection Address
-        run: |
-          $response = Invoke-RestMethod -Uri "http://localhost:4040/api/tunnels"
-          $publicUrl = $response.tunnels[0].public_url
+          $tsIp = & "C:\Program Files\Tailscale\tailscale.exe" ip -4
           Write-Host "===================================================="
-          Write-Host "YOUR NGROK RDP ADDRESS: $publicUrl"
+          Write-Host "RDP is ready!"
+          Write-Host "Tailscale IP: $tsIp"
           Write-Host "Username: ${{ secrets.RDP_USER }}"
+          Write-Host "Connect via your Tailscale IP in the Windows App."
           Write-Host "===================================================="
         shell: powershell
 

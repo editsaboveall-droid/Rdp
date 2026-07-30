@@ -28,11 +28,11 @@ jobs:
 
       - name: Install and Connect Tailscale
         run: |
-          Write-Host "Downloading Tailscale..."
-          Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe" -OutFile "tailscale-setup.exe"
+          Write-Host "Downloading Tailscale MSI..."
+          Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-1.78.3-amd64.msi" -OutFile "tailscale-setup.msi"
           
-          Write-Host "Installing Tailscale..."
-          Start-Process -FilePath "tailscale-setup.exe" -ArgumentList "/verysilent /norestart" -NoNewWindow -Wait
+          Write-Host "Installing Tailscale silently..."
+          Start-Process -FilePath "msiexec.exe" -ArgumentList "/i tailscale-setup.msi /quiet /norestart" -NoNewWindow -Wait
           
           Write-Host "Starting Tailscale and logging in..."
           $tailscalePath = "$env:ProgramFiles\Tailscale\tailscale.exe"

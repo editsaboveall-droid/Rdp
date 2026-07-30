@@ -26,25 +26,25 @@ jobs:
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         shell: powershell
 
-      - name: Install and Connect Tailscale via Winget
+      - name: Install Ngrok
         run: |
-          Write-Host "Installing Tailscale using winget..."
-          winget install --id Tailscale.Tailscale -e --accept-package-agreements --accept-source-agreements
-          
-          Write-Host "Refreshing Environment Paths..."
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-          
-          Write-Host "Starting Tailscale and logging in..."
-          $tailscalePath = "$env:ProgramFiles\Tailscale\tailscale.exe"
-          & $tailscalePath up --authkey="${{ secrets.TAILSCALE_AUTH_KEY }}" --accept-routes
+          winget install --id Ngrok.Ngrok -e --accept-package-agreements --accept-source-agreements
         shell: powershell
 
-      - name: Display Connection Information
+      - name: Start Ngrok Tunnel for RDP
         run: |
+          ngrok config add-authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+          Start-Process ngrok -ArgumentList "tcp 3389"
+          Start-Sleep -Seconds 5
+        shell: powershell
+
+      - name: Get Ngrok Connection Address
+        run: |
+          $response = Invoke-RestMethod -Uri "http://localhost:4040/api/tunnels"
+          $publicUrl = $response.tunnels[0].public_url
           Write-Host "===================================================="
-          Write-Host "RDP is ready!"
+          Write-Host "YOUR NGROK RDP ADDRESS: $publicUrl"
           Write-Host "Username: ${{ secrets.RDP_USER }}"
-          Write-Host "Connect via your Tailscale IP shown in your Tailscale admin panel."
           Write-Host "===================================================="
         shell: powershell
 
